@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Morse Code Converter</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600&display=swap');
+
+    :root {
+      --bg:       #0b1120;
+      --surface:  #111827;
+      --border:   #1f2937;
+      --accent:   #facc15;
+      --accent2:  #fde68a;
+      --text:     #f9fafb;
+      --muted:    #6b7280;
+      --danger:   #f87171;
+      --radius:   12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px;
+    }
+
+    header { text-align: center; margin-bottom: 40px; }
+
+    .signal { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; }
+
+    .dot, .dash {
+      background: var(--accent);
+      border-radius: 99px;
+      height: 14px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .dot  { width: 14px; }
+    .dash { width: 36px; animation-delay: 0.3s; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    h1 { font-family: 'Share Tech Mono', monospace; font-size: 32px; letter-spacing: 2px; color: var(--text); }
+    h1 span { color: var(--accent); }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 8px; letter-spacing: 0.5px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 620px;
+      margin-bottom: 16px;
+    }
+
+    .toggle-row {
+      display: flex;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .toggle-btn {
+      flex: 1; padding: 10px; border: none; background: transparent;
+      color: var(--muted); font-family: 'Share Tech Mono', monospace;
+      font-size: 13px; border-radius: 6px; cursor: pointer;
+      transition: all 0.2s; letter-spacing: 0.5px;
+    }
+    .toggle-btn.active { background: var(--accent); color: #0b1120; font-weight: 600; }
+
+    .field-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--muted); font-family: 'Share Tech Mono', monospace; margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: 'Share Tech Mono', monospace;
+      font-size: 15px; padding: 14px; resize: vertical; min-height: 110px;
+      outline: none; transition: border-color 0.15s; line-height: 1.7;
+    }
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
+
+    .convert-btn {
+      width: 100%; margin-top: 16px; padding: 14px; background: var(--accent);
+      color: #0b1120; border: none; border-radius: 8px;
+      font-family: 'Share Tech Mono', monospace; font-size: 15px;
+      font-weight: 600; letter-spacing: 1px; cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .convert-btn:hover  { opacity: 0.9; }
+    .convert-btn:active { transform: scale(0.98); }
+
+    .output-box {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px; font-family: 'Share Tech Mono', monospace; font-size: 18px;
+      line-height: 2; color: var(--accent); min-height: 80px;
+      word-break: break-all; letter-spacing: 1px; position: relative;
+    }
+    .output-box.empty { color: var(--muted); font-size: 14px; }
+
+    .copy-btn {
+      position: absolute; top: 10px; right: 10px; background: var(--border);
+      border: none; color: var(--muted); font-size: 12px;
+      font-family: 'Share Tech Mono', monospace; padding: 4px 10px;
+      border-radius: 4px; cursor: pointer; transition: all 0.15s;
+    }
+    .copy-btn:hover { background: var(--accent); color: #0b1120; }
+
+    .warning {
+      font-size: 12px; color: var(--danger); margin-top: 10px;
+      font-family: 'Share Tech Mono', monospace; display: none;
+    }
+
+    .ref-toggle { text-align: center; margin-top: 4px; }
+    .ref-toggle button {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      font-size: 12px; font-family: 'Share Tech Mono', monospace;
+      padding: 6px 16px; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+    }
+    .ref-toggle button:hover { border-color: var(--accent); color: var(--accent); }
+
+    .ref-table { display: none; margin-top: 16px; }
+    .ref-table.open { display: block; }
+
+    .ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px; }
+
+    .ref-item {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px; text-align: center;
+    }
+    .ref-char { font-family: 'Share Tech Mono', monospace; font-size: 16px; font-weight: 700; color: var(--accent); }
+    .ref-code { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="signal">
+    <div class="dot"></div><div class="dash"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dash"></div>
+  </div>
+  <h1>MORSE <span>//</span> CODE</h1>
+  <p class="subtitle">Text to Morse · Morse to Text</p>
+</header>
+
+<div class="card">
+  <div class="toggle-row">
+    <button class="toggle-btn active" id="toMorseBtn" onclick="setDirection('to_morse')">TEXT → MORSE</button>
+    <button class="toggle-btn" id="toTextBtn" onclick="setDirection('to_text')">MORSE → TEXT</button>
+  </div>
+
+  <div class="field-label" id="inputLabel">Enter text</div>
+  <textarea id="inputBox" placeholder="Type something…" oninput="autoConvert()"></textarea>
+  <button class="convert-btn" onclick="convert()">CONVERT</button>
+  <div class="warning" id="warning"></div>
+</div>
+
+<div class="card">
+  <div class="field-label">Output</div>
+  <div class="output-box empty" id="outputBox">
+    Your result will appear here …
+    <button class="copy-btn" id="copyBtn" onclick="copyResult()" style="display:none">COPY</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ref-toggle">
+    <button onclick="toggleRef()">▾ Show Morse Code Reference</button>
+  </div>
+  <div class="ref-table" id="refTable">
+    <div class="ref-grid" id="refGrid"></div>
+  </div>
+</div>
+
+<script>
+  let direction = 'to_morse';
+  let debounceTimer = null;
+
+  const MORSE = {
+    A:'.-', B:'-...', C:'-.-.', D:'-..', E:'.', F:'..-.', G:'--.', H:'....',
+    I:'..', J:'.---', K:'-.-', L:'.-..', M:'--', N:'-.', O:'---', P:'.--.',
+    Q:'--.-', R:'.-.', S:'...', T:'-', U:'..-', V:'...-', W:'.--', X:'-..-',
+    Y:'-.--', Z:'--..',
+    '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-',
+    '5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
+    '.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--','/':'-..-.','@':'.--.-.'
+  };
+
+  const grid = document.getElementById('refGrid');
+  Object.entries(MORSE).forEach(([char, code]) => {
+    const el = document.createElement('div');
+    el.className = 'ref-item';
+    el.innerHTML = `<div class="ref-char">${char}</div><div class="ref-code">${code}</div>`;
+    grid.appendChild(el);
+  });
+
+  function setDirection(dir) {
+    direction = dir;
+    document.getElementById('toMorseBtn').classList.toggle('active', dir === 'to_morse');
+    document.getElementById('toTextBtn').classList.toggle('active', dir === 'to_text');
+    document.getElementById('inputLabel').textContent = dir === 'to_morse' ? 'Enter text' : 'Enter morse code (use / between words)';
+    document.getElementById('inputBox').placeholder   = dir === 'to_morse' ? 'Type something…' : 'e.g.  ... --- ...  /  ... --- ...';
+    document.getElementById('inputBox').value = '';
+    setOutput('', true);
+    document.getElementById('warning').style.display = 'none';
+  }
+
+  function autoConvert() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(convert, 300);
+  }
+
+  async function convert() {
+    const text = document.getElementById('inputBox').value;
+    if (!text.trim()) { setOutput('', true); return; }
+
+    const res  = await fetch('/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, direction })
+    });
+    const data = await res.json();
+    setOutput(data.result, false);
+
+    const warn = document.getElementById('warning');
+    if (data.unknown && data.unknown.length > 0) {
+      warn.textContent = '⚠ Unknown characters skipped: ' + data.unknown.join(', ');
+      warn.style.display = 'block';
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+
+  function setOutput(text, empty) {
+    const box     = document.getElementById('outputBox');
+    const copyBtn = document.getElementById('copyBtn');
+    if (empty || !text) {
+      box.textContent = 'Your result will appear here …';
+      box.className   = 'output-box empty';
+      copyBtn.style.display = 'none';
+    } else {
+      box.textContent = text;
+      box.className   = 'output-box';
+      box.appendChild(copyBtn);
+      copyBtn.style.display = 'block';
+    }
+  }
+
+  function copyResult() {
+    const text = document.getElementById('outputBox').textContent.replace('COPY', '').trim();
+    navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'COPIED!';
+    setTimeout(() => btn.textContent = 'COPY', 1500);
+  }
+
+  function toggleRef() {
+    const table = document.getElementById('refTable');
+    const btn   = document.querySelector('.ref-toggle button');
+    table.classList.toggle('open');
+    btn.textContent = table.classList.contains('open') ? '▴ Hide Morse Code Reference' : '▾ Show Morse Code Reference';
+  }
+</script>
+</body>
+</html>
